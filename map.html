@@ -19,6 +19,16 @@
       height: 300px;
       width: 200px;
     }
+
+    .text {
+      font-size: 12px;
+    }
+
+    #toggle-drawing {
+      width: 27%;
+      position: relative;
+      margin-left: 10px;
+    }
   </style>
 </head>
 <body>
@@ -28,6 +38,9 @@
       <div>
         <input type="button" id="show-listings" value="Show Listings">
         <input type="button" id="hide-listings" value="Hide Listings">
+        <hr>
+        <span class="text">Draw a shape to search within it for home!</span>
+        <input type="button" id="toggle-drawing" value="Drawing Tools">
       </div>
     </div>
   </div>
@@ -35,6 +48,7 @@
   <script>
   var map;
   var markers = [];
+  var polygon = null;
 
   function initMap() {
     map = new google.maps.Map(document.getElementById('map'), {
@@ -53,6 +67,17 @@
 
     var largeInfoWindow = new google.maps.InfoWindow();
 
+    var drawingManager = new google.maps.drawing.DrawingManager({
+      drawingMode: google.maps.drawing.OverlayType.POLYGON,
+      drawingControl: true,
+      drawingControlOptions: {
+        position: google.maps.ControlPosition.TOP_LEFT,
+        drawingModes: [
+          google.maps.drawing.OverlayType.POLYGON
+        ]
+      }
+    })
+
     var bounds = new google.maps.LatLngBounds();
 
     for (var i = 0; i < locations.length; i++) {
@@ -60,7 +85,6 @@
       var title = locations[i].title;
 
       var marker = new google.maps.Marker({
-        map: map,
         position: position,
         title: title,
         animation: google.maps.Animation.DROP,
@@ -79,6 +103,50 @@
 
     document.getElementById('show-listings').addEventListener('click', showListings);
     document.getElementById('hide-listings').addEventListener('click', hideListings);
+
+    document.getElementById('toggle-drawing').addEventListener('click', function() {
+      toggleDrawing(drawingManager);
+    });
+
+    drawingManager.addListener('overlaycomplete', function(event) {
+      if (polygon) {
+        polygon.setMap(null);
+        hideListings();
+      }
+
+      drawingManager.setDrawingMode(null);
+
+      polygon = event.overlay;
+      polygon.setEditable(true);
+
+      searchWithinPolygon();
+
+      polygon.getPath().addListener('set_at', searchWithinPolygon);
+      polygon.getPath().addListener('insert_at', searchWithinPolygon);
+
+      alert("Area: " + google.maps.geometry.spherical.computeArea(polygon.getPath()) + "m\xB2");
+    });
+
+    function searchWithinPolygon() {
+      for (var i = 0; i < markers.length; i++) {
+        if (google.maps.geometry.poly.containsLocation(markers[i].position, polygon)) {
+          markers[i].setMap(map);
+        } else {
+          markers[i].setMap(null);
+        }
+      }
+    }
+
+    function toggleDrawing(drawingManager) {
+      if (drawingManager.map) {
+        drawingManager.setMap(null);
+        if (polygon) {
+          polygon.setMap(null);
+        }
+      } else {
+        drawingManager.setMap(map);
+      }
+    }
 
     function populateInfoWindow(marker, infowindow) {
       if (infowindow.marker != marker) {
@@ -147,7 +215,7 @@
 
   I AM SO EMPTY
   <script async defer
-    src="https://maps.googleapis.com/maps/api/js?libraries=geometry&key=AIzaSyDNuTFOEi29eQHK8Z7EvZf4HxbyJ_vqROQ&callback=initMap">
+    src="https://maps.googleapis.com/maps/api/js?libraries=drawing,geometry&key=AIzaSyDNuTFOEi29eQHK8Z7EvZf4HxbyJ_vqROQ&callback=initMap">
   </script>
 </body>
 </html>
