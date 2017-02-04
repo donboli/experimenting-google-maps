@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title></title>
+  <style>
+    html,
+    body {
+      font-family: Arial, sans-serif;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    #map {
+      height: 100%;
+    }
+
+    #pano {
+      height: 300px;
+      width: 200px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="options-box">
+      <h1>Find Your New NYC Home</h1>
+      <div>
+        <input type="button" id="show-listings" value="Show Listings">
+        <input type="button" id="hide-listings" value="Hide Listings">
+      </div>
+    </div>
+  </div>
+  <div id="map"></div>
+  <script>
+  var map;
+  var markers = [];
+
+  function initMap() {
+    map = new google.maps.Map(document.getElementById('map'), {
+      center: {lat: 40.77, lng: -73.96},
+      zoom: 10
+    });
+
+    var locations = [
+      {title: 'lala', location: {lat: 40.77, lng: -73.92}},
+      {title: 'asd', location: {lat: 41.77, lng: -73.95}},
+      {title: 'wer', location: {lat: 42.77, lng: -73.99}},
+      {title: 'ihio34', location: {lat: 39.47, lng: -73.91}},
+      {title: 'opsidf', location: {lat: 40.23, lng: -72.96}},
+      {title: 'oier', location: {lat: 40.26, lng: -74.96}}
+    ];
+
+    var largeInfoWindow = new google.maps.InfoWindow();
+
+    var bounds = new google.maps.LatLngBounds();
+
+    for (var i = 0; i < locations.length; i++) {
+      var position = locations[i].location;
+      var title = locations[i].title;
+
+      var marker = new google.maps.Marker({
+        map: map,
+        position: position,
+        title: title,
+        animation: google.maps.Animation.DROP,
+        id: i
+      });
+
+      markers.push(marker);
+      bounds.extend(marker.position);
+
+      marker.addListener('click', function() {
+        populateInfoWindow(this, largeInfoWindow);
+      });
+    }
+
+    map.fitBounds(bounds);
+
+    document.getElementById('show-listings').addEventListener('click', showListings);
+    document.getElementById('hide-listings').addEventListener('click', hideListings);
+
+    function populateInfoWindow(marker, infowindow) {
+      if (infowindow.marker != marker) {
+        infowindow.marker = marker;
+        infowindow.setContent('<div>' + marker.title + '</div>');
+        infowindow.open(map, marker);
+        infowindow.addListener('closeclick', function() {
+          infowindow.marker = null;
+        });
+      }
+      var streetViewService = new google.maps.StreetViewService();
+      var radius = 50;
+
+      function getStreetView(data, status) {
+        debugger;
+        if (status == google.maps.StreetViewStatus.OK) {
+          var nearStreetViewLocation = data.location.latLng;
+          var heading = google.maps.geometry.spherical.computeHeading(nearStreetViewLocation, marker.position);
+          infowindow.setContent('<div>' + marker.title + '</div><div id="pano"></div>');
+          var panoramaOptions = {
+            position: nearStreetViewLocation,
+            pov: {
+              heading: heading,
+              pitch: 30
+            }
+          };
+          var panorama = new google.maps.StreetViewPanorama(document.getElementById('pano'), panoramaOptions);
+        } else {
+          infowindow.setContent('<div>' + marker.title + '</div>' + '<div>No Street View Found</div>');
+        }
+      }
+
+      streetViewService.getPanoramaByLocation(marker.position, radius, getStreetView);
+    }
+
+    function showListings() {
+      var bounds = new google.maps.LatLngBounds();
+
+      for (var i = 0; i < markers.length; i++) {
+        markers[i].setMap(map);
+        bounds.extend(markers[i].position);
+      }
+      map.fitBounds(bounds);
+    }
+
+    function hideListings() {
+      for (var i = 0; i < markers.length; i++) {
+        markers[i].setMap(null);
+      }
+    }
+
+    // var wilmersdorf = {lat: 52.494035, lng: 13.324362};
+    // var marker = new google.maps.Marker({
+    //   position: wilmersdorf,
+    //   map: map,
+    //   title: 'Wilmersdorf'
+    // });
+    // var infoWindow = new google.maps.InfoWindow({
+    //   content: 'sdfsdfsdf'
+    // });
+    // marker.addListener('click', function() {
+    //   infoWindow.open(map, marker);
+    // });
+  }
+  </script>
+
+  I AM SO EMPTY
+  <script async defer
+    src="https://maps.googleapis.com/maps/api/js?libraries=geometry&key=AIzaSyDNuTFOEi29eQHK8Z7EvZf4HxbyJ_vqROQ&callback=initMap">
+  </script>
+</body>
+</html>
