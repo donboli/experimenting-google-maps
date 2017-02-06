@@ -234,14 +234,13 @@
         }
         var destination = address;
         var mode = document.getElementById('mode').value;
-        debugger;
+
         distanceMatrixService.getDistanceMatrix({
           origins: origins,
           destinations: [destination],
           travelMode: google.maps.TravelMode[mode],
           unitSystem: google.maps.UnitSystem.IMPERIAL
         }, function(response, status) {
-          debugger;
           if (status !== google.maps.DistanceMatrixStatus.OK) {
             window.alert('error was: ' + status);
           } else {
@@ -284,6 +283,10 @@
             }
           }
         }
+      }
+
+      if (!atLeastOne) {
+        alert('No places found');
       }
     }
 
